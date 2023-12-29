@@ -11,6 +11,7 @@
 #include "IndexBuffer.h"
 #include "VertexArray.h"
 #include "Shader.h"
+#include "Texture.h"
 
 int main(void)
 {
@@ -43,10 +44,10 @@ int main(void)
     GLCall(std::cout << glGetString(GL_VERSION) << std::endl);
 
     float positions[] = {
-        -0.5f, -0.5f,
-         0.5f, -0.5f,
-         0.5f,  0.5f,
-        -0.5f,  0.5f
+        -0.5f, -0.5f, 0.0f, 0.0f,
+         0.5f, -0.5f, 1.0f, 0.0f,
+         0.5f,  0.5f, 1.0f, 1.0f,
+        -0.5f,  0.5f, 0.0f, 1.0f
     };
 
     unsigned int indices[] = {
@@ -54,44 +55,39 @@ int main(void)
         2, 3, 0
     };
 
+    GLCall(glEnable(GL_BLEND));
+    GLCall(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
+
     VertexArray* va = new VertexArray;
 
     IndexBuffer* ib = new IndexBuffer(indices, 6);
-    VertexBuffer* vb = new VertexBuffer(positions, 4 * 2 * sizeof(float));
+    VertexBuffer* vb = new VertexBuffer(positions, 4 * 4 * sizeof(float));
     VertexBufferLayout* layout = new VertexBufferLayout();
-
+    layout->Push<float>(2);
     layout->Push<float>(2);
     va->AddBuffer(*vb, *layout, *ib);
 
     Shader* shader = new Shader("./res/shaders/Basic.shader");
     shader->SetUniform4f("u_Color", 0.8f, 0.3f, 0.8f, 1.0f);
 
+    Texture* texture = new Texture("res/textures/ShaggyRogers.png");
+    texture->Bind();
+    shader->SetUniform1i("u_Texture", 0);
+
     Renderer* renderer = new Renderer();
 
-    float r = 0.0f;
-    float increment = 0.05f;
     while (!glfwWindowShouldClose(window))
     {
         renderer->Clear();
 
-        shader->Bind();
-        shader->SetUniform4f("u_Color", r, 0.3f, 0.8f, 1.0f);
-
-        renderer->Draw(*va, *ib, *shader);
-
-        if (r >= 1.0f)
-            increment = -0.05f;
-        else if (r <= 0.0f)
-            increment = 0.05f;
-
-        r += increment;
+        renderer->Draw(*va, *shader);
 
         glfwSwapBuffers(window);
 
         glfwPollEvents();
     }
 
-    delete va, layout, vb, ib, shader, renderer;
+    delete va, layout, vb, ib, shader, texture, renderer;
 
     glfwTerminate();
     return 0;
