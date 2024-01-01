@@ -13,6 +13,9 @@
 #include "Shader.h"
 #include "Texture.h"
 
+#include "glm/glm.hpp"
+#include "glm/gtc/matrix_transform.hpp"
+
 int main(void)
 {
     GLFWwindow* window;
@@ -67,8 +70,10 @@ int main(void)
     layout->Push<float>(2);
     va->AddBuffer(*vb, *layout, *ib);
 
+    glm::mat4 proj = glm::ortho(-2.0f, 2.0f, -1.5f, 1.5f, -1.0f, 1.0f);
+
     Shader* shader = new Shader("./res/shaders/Basic.shader");
-    shader->SetUniform4f("u_Color", 0.8f, 0.3f, 0.8f, 1.0f);
+    shader->SetUniformMat4f("u_MVP", proj);
 
     Texture* texture = new Texture("res/textures/ShaggyRogers.png");
     texture->Bind();
