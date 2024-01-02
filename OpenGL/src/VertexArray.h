@@ -8,7 +8,7 @@ class VertexArray
 {
 private:
 	unsigned int m_RendererID;
-	unsigned int m_Count;
+	unsigned int m_IndexCount;
 public:
 	VertexArray();
 	~VertexArray();
@@ -18,5 +18,5 @@ public:
 	void Bind() const;
 	void Unbind() const;
 
-	inline unsigned int GetIndexCount() const { return m_Count; };
+	inline unsigned int GetIndexCount() const { return m_IndexCount; };
 };

@@ -16,6 +16,10 @@
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
 
+#include "imgui/imgui.h"
+#include "imgui/imgui_impl_glfw.h"
+#include "imgui/imgui_impl_opengl3.h"
+
 int main(void)
 {
     GLFWwindow* window;
@@ -35,7 +39,6 @@ int main(void)
     }
 
     glfwMakeContextCurrent(window);
-
     glfwSwapInterval(1);
 
     GLenum err = glewInit();
@@ -71,9 +74,9 @@ int main(void)
     va->AddBuffer(*vb, *layout, *ib);
 
     glm::mat4 proj = glm::ortho(-2.0f, 2.0f, -1.5f, 1.5f, -1.0f, 1.0f);
+    glm::mat4 view = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
 
     Shader* shader = new Shader("./res/shaders/Basic.shader");
-    shader->SetUniformMat4f("u_MVP", proj);
 
     Texture* texture = new Texture("res/textures/ShaggyRogers.png");
     texture->Bind();
@@ -81,11 +84,49 @@ int main(void)
 
     Renderer* renderer = new Renderer();
 
+    ImGui::CreateContext();
+    ImGui::StyleColorsDark();
+    
+    ImGui_ImplGlfw_InitForOpenGL(window, true);
+    ImGui_ImplOpenGL3_Init();
+
+    glm::vec3 translationA(0.0f, 0.0f, 0.0f);
+    glm::vec3 translationB(0.5f, 0.0f, 0.0f);
     while (!glfwWindowShouldClose(window))
     {
         renderer->Clear();
 
-        renderer->Draw(*va, *shader);
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+
+        {
+            glm::mat4 model = glm::translate(glm::mat4(1.0f), translationA);
+            glm::mat4 mvp = model * view * proj;
+            shader->SetUniformMat4f("u_MVP", mvp);
+            renderer->Draw(*va, *shader);
+        }
+
+        {
+            glm::mat4 model = glm::translate(glm::mat4(1.0f), translationB);
+            glm::mat4 mvp = model * view * proj;
+            shader->SetUniformMat4f("u_MVP", mvp);
+            renderer->Draw(*va, *shader);
+        }
+
+        {
+            ImGui::Begin("ImGui");
+
+            ImGui::SliderFloat3("Translation A", &translationA.x, -1.0f, 1.0f);
+            ImGui::SliderFloat3("Translation B", &translationB.x, -1.0f, 1.0f);
+            ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 
+                1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+
+            ImGui::End();
+        }   
+
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
         glfwSwapBuffers(window);
 
@@ -94,6 +135,12 @@ int main(void)
 
     delete va, layout, vb, ib, shader, texture, renderer;
 
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
+
+    glfwDestroyWindow(window);
     glfwTerminate();
+
     return 0;
 }
